@@ -2,6 +2,7 @@
 
 DATE=`date '+%Y%m%d'`
 cd `dirname $0`
+cd data
 mkdir $DATE
 cd $DATE
 
