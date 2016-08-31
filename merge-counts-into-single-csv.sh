@@ -8,15 +8,15 @@ declare -A COUNTS
 DIRS=`find . -type d | grep -E '[0-9]{8}' | sed s@\.\/@@ | sort`
 for dir in $DIRS
 do
-	COUNTS["DATE"]+="$dir, "
+	COUNTS["DATE"]+="$dir,"
 	for STATUS in "NEW" "INCOMPLETE" "CONFIRMED" "TRIAGED" "INPROGRESS" "FIXCOMMITTED"
 	do
 		COUNTS[$STATUS]+=`grep $STATUS $dir/result.csv | awk -F"," '{print $2}'`
-		COUNTS[$STATUS]+=', '
+		COUNTS[$STATUS]+=','
 	done
 done
 
 for KEY in "DATE" "NEW" "INCOMPLETE" "CONFIRMED" "TRIAGED" "INPROGRESS" "FIXCOMMITTED"
 do
-	echo "$KEY, ${COUNTS[$KEY]}" >> result.csv
+	echo "$KEY,${COUNTS[$KEY]}" >> result.csv
 done
