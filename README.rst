@@ -17,5 +17,5 @@ current progress in the bug triage.
 Current graph
 -------------
 
-.. image:: tempest-bug-count.jpg
+.. image:: tempest_bug_count.png
 
