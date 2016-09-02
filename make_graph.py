@@ -17,9 +17,10 @@ for row in reader:
         index = 1
         #print(bug_status)
         for colum in row:
-            if colum is '':
+            try:
+                count = int(colum)
+            except ValueError:
                 continue
-            count = int(colum)
             d = date[index]
             #print("%s: %s" % (d, count))
             if d not in data_list:
