@@ -1,16 +1,20 @@
+#!/usr/bin/env python2
+
 import csv
-import pandas as pd
+
+from dateutil import parser as date_parser
 import matplotlib
+import matplotlib.pyplot as plt
+import pandas as pd
+
+matplotlib.style.use('ggplot')
 
 
-# NOTE: To avoid the following error:
-# _tkinter.TclError: no display name and no $DISPLAY environment variable
-matplotlib.use('Agg')
-
-reader = csv.reader(open('result.csv', 'rb'), delimiter=',')
-date = reader.next()
-data_list = {}
-for row in reader:
+with open('result.csv', mode='rb') as csvfd:
+    reader = csv.reader(csvfd, delimiter=',')
+    date = reader.next()
+    data_list = {}
+    for row in reader:
         # row is like ['NEW', '24', '25', '25', '25', '25', '25', '25']
         # and the first is a bug status(NEW, INPROGRESS, etc.)
         bug_status = row.pop(0)
@@ -22,7 +26,7 @@ for row in reader:
             except ValueError:
                 continue
             d = date[index]
-            #print("%s: %s" % (d, count))
+            d = date_parser.parse(d).date()
             if d not in data_list:
                 data_list[d] = {}
             data_list[d][bug_status] = count
@@ -30,8 +34,11 @@ for row in reader:
 
 title = "Tempest bug"
 filename = "tempest_bug_count.png"
+plt.figure()
+plt.title(title)
 df = pd.DataFrame.from_dict(data_list, orient='index')
-plot = df.plot(kind='barh', stacked=True).set_title(title)
-fig = plot.get_figure()
-fig.savefig(filename)
-
+df_plot = df.plot(kind='bar', stacked=True, cmap=plt.get_cmap('Accent'))
+df_plot.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3,
+          fancybox=True, shadow=True)
+plt.tight_layout()
+plt.savefig(filename, dpi=900)
