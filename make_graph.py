@@ -19,7 +19,6 @@ with open('result.csv', mode='rb') as csvfd:
         # and the first is a bug status(NEW, INPROGRESS, etc.)
         bug_status = row.pop(0)
         index = 1
-        #print(bug_status)
         for colum in row:
             try:
                 count = int(colum)
@@ -37,8 +36,12 @@ filename = "tempest_bug_count.png"
 plt.figure()
 plt.title(title)
 df = pd.DataFrame.from_dict(data_list, orient='index')
-df_plot = df.plot(kind='bar', stacked=True, cmap=plt.get_cmap('Accent'))
+df_plot = df.plot(kind='area', rot=90, stacked=True,
+                  cmap=plt.get_cmap('Accent'))
 df_plot.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3,
-          fancybox=True, shadow=True)
+               fancybox=True, shadow=True)
+df_plot.set_axisbelow(False)
+df_plot.xaxis.grid(True)
+df_plot.yaxis.grid(False)
 plt.tight_layout()
 plt.savefig(filename, dpi=900)
