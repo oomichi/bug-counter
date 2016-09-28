@@ -4,6 +4,11 @@ import csv
 
 from dateutil import parser as date_parser
 import matplotlib
+
+# NOTE: To avoid the following error:
+# _tkinter.TclError: no display name and no $DISPLAY environment variable
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import pandas as pd
 
