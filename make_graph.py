@@ -6,6 +6,7 @@ from dateutil import parser as date_parser
 import matplotlib
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 import pandas as pd
 
 
@@ -48,6 +49,8 @@ df_plot.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3,
                fancybox=True, shadow=True, handles=handles)
 df_plot.set_axisbelow(False)
 df_plot.xaxis.grid(True)
+df_plot.xaxis.set_minor_locator(ticker.MultipleLocator())
 df_plot.yaxis.grid(False)
+df_plot.yaxis.set_minor_locator(ticker.MultipleLocator(10))
 plt.tight_layout()
 plt.savefig(filename, dpi=900)
