@@ -48,8 +48,14 @@ df_plot = df.plot(kind='area', rot=90, stacked=True,
                   cmap=plt.get_cmap('Accent'))
 old_handles, labels = df_plot.get_legend_handles_labels()
 handles = []
+num = 0
 for handle, label in zip(old_handles, labels):
-    handles.append(mpatches.Patch(color=handle.get_color(), label=label))
+    # AttributeError: 'PolyCollection' object has no attribute 'get_color'
+    # handles.append(mpatches.Patch(color=handle.get_color(), label=label))
+    colorlist = ['red', 'grey', 'blue', 'yellow', 'green', 'white']
+    color = colorlist[num]
+    num+=1
+    handles.append(mpatches.Patch(color=color, label=label))
 df_plot.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=3,
                fancybox=True, shadow=True, handles=handles)
 df_plot.set_axisbelow(False)
