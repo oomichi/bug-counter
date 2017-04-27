@@ -16,6 +16,8 @@ do
 	done
 done
 
+rm result.csv
+
 for KEY in "DATE" "NEW" "INCOMPLETE" "CONFIRMED" "TRIAGED" "INPROGRESS" "FIXCOMMITTED"
 do
 	echo "$KEY,${COUNTS[$KEY]}" >> result.csv
