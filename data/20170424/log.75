@@ -1,0 +1,2895 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bugs : tempest</title>
+    <link rel="shortcut icon" href="/@@/launchpad.png" />
+    
+    
+    
+
+    
+  
+  <link type="text/css" rel="stylesheet"
+        media="screen, print"
+        href="/+icing/rev18361/combo.css" />
+
+
+    
+
+    
+      
+    
+
+    
+  
+
+  
+  
+  <script type="text/javascript">
+    var LP = {
+        cache: {},
+        links: {}
+    };
+  </script>
+
+  
+
+  <script type="text/javascript">var cookie_scope = '; Path=/; Secure; Domain=.launchpad.net';</script>
+
+   <script type="text/javascript"
+           src="/+combo/rev18361/?yui/yui/yui-min.js&amp;lp/meta.js&amp;yui/loader/loader-min.js"></script>
+   <script type="text/javascript">
+        var raw = null;
+        if (LP.devmode) {
+           raw = 'raw';
+        }
+        YUI.GlobalConfig = {
+            combine: true,
+            comboBase: '/+combo/rev18361/?',
+            root: 'yui/',
+            filter: raw,
+            debug: false,
+            fetchCSS: false,
+            maxURLLength: 2000,
+            groups: {
+                lp: {
+                    combine: true,
+                    base: '/+combo/rev18361/?lp/',
+                    comboBase: '/+combo/rev18361/?',
+                    root: 'lp/',
+                    // comes from including lp/meta.js
+                    modules: LP_MODULES,
+                    fetchCSS: false
+                }
+            }
+        }</script>
+
+  <script type="text/javascript">
+      // we need this to create a single YUI instance all events and code
+      // talks across. All instances of YUI().use should be based off of
+      // LPJS instead.
+      LPJS = new YUI();
+  </script>
+
+
+
+    <script id="base-layout-load-scripts" type="text/javascript">
+        //<![CDATA[
+        LPJS.use('base', 'node', 'console', 'event',
+            'oop', 'lp', 'lp.app.foldables','lp.app.sorttable',
+            'lp.app.inlinehelp', 'lp.app.links', 'lp.app.longpoll',
+            'lp.bugs.bugtask_index', 'lp.bugs.subscribers',
+            'lp.app.ellipsis', 'lp.code.branchmergeproposal.diff',
+            'lp.views.global',
+             function(Y) {
+
+            Y.on("domready", function () {
+                var global_view = new Y.lp.views.Global();
+                global_view.render();
+
+                Y.lp.app.sorttable.SortTable.init();
+                Y.lp.app.inlinehelp.init_help();
+                Y.lp.activate_collapsibles();
+                Y.lp.app.foldables.activate();
+                Y.lp.app.links.check_valid_lp_links();
+                // Longpolling will only start if
+                // LP.cache.longpoll is populated.
+                // We use Y.later to work around a Safari/Chrome 'feature':
+                // The mouse cursor stays 'busy' until all the requests started during
+                // page load are finished.  Hence we want the long poll request to start
+                // right *after* the page has loaded.
+                Y.later(0, Y.lp.app.longpoll, Y.lp.app.longpoll.setupLongPollManager);
+
+            });
+
+            Y.on('lp:context:web_link:changed', function(e) {
+                  window.location = e.new_value;
+            });
+        });
+        //]]>
+    </script>
+    <script id="base-helper-functions" type="text/javascript">
+         //<![CDATA[
+        // This code is pulled from lp.js that needs to be available on every
+        // request. Pulling here to get it outside the scope of the YUI block.
+        function setFocusByName(name) {
+            // Focus the first element matching the given name which can be focused.
+            var nodes = document.getElementsByName(name);
+            var i, node;
+            for (i = 0; i < nodes.length; i++) {
+                node = nodes[i];
+                if (node.focus) {
+                    try {
+                        // Trying to focus a hidden element throws an error in IE8.
+                        if (node.offsetHeight !== 0) {
+                            node.focus();
+                        }
+                    } catch (e) {
+                        LPJS.use('console', function(Y) {
+                            Y.log('In setFocusByName(<' +
+                                node.tagName + ' type=' + node.type + '>): ' + e);
+                        });
+                    }
+                    break;
+                }
+            }
+        }
+
+        function selectWidget(widget_name, event) {
+          if (event && (event.keyCode === 9 || event.keyCode === 13)) {
+              // Avoid firing if user is tabbing through or simply pressing
+              // enter to submit the form.
+              return;
+          }
+          document.getElementById(widget_name).checked = true;
+        }
+        //]]>
+    </script>
+
+    
+      
+
+
+
+<script type="text/javascript">
+    LPJS.use('lp.registry.structural_subscription', function(Y) {
+        Y.on('domready', function() {
+            Y.lp.registry.structural_subscription.setup(
+                {content_box: "#structural-subscription-content-box"});
+        });
+    });
+  </script>
+  
+  <script type="text/javascript">
+    LPJS.use('lp.bugs.buglisting', function(Y) {
+        Y.on('domready', function() {
+            var view = new Y.lp.bugs.buglisting.TableView({
+                active_sort_key: LP.cache.order_by,
+                sort_keys: LP.cache.sort_keys
+            });
+            view.render();
+        })
+    });
+  </script>
+
+
+    
+  </head>
+
+  <body id="document" itemscope=""
+        itemtype="http://schema.org/WebPage"
+        class="tab-bugs
+      main_side
+      public
+      yui3-skin-sam">
+          
+          
+    <div class="yui-d0">
+      <div id="locationbar" class="login-logout">
+        
+
+<div id="logincontrol"><a href="https://bugs.launchpad.net/tempest/+bugs/+login?memo=75&amp;orderby=-importance&amp;start=75">Log in / Register</a></div>
+
+
+
+      </div><!--id="locationbar"-->
+
+      <div id="watermark" class="watermark-apps-portlet">
+        <div>
+          <a href="https://launchpad.net/tempest"><img alt="" width="64" height="64" src="/@@/product-logo" /></a>
+        </div>
+        <div class="wide">
+          <h2 id="watermark-heading"><a href="https://launchpad.net/tempest">tempest</a></h2>
+        </div>
+        
+  <!-- Application Menu -->
+  <ul class="facetmenu">
+    
+      
+      <li class="overview"><a
+    href="https://launchpad.net/tempest">Overview</a></li>
+      
+    
+    
+      
+      <li class="branches"><a
+    href="https://code.launchpad.net/tempest">Code</a></li>
+      
+    
+    
+      <li class="bugs active"><a
+    href="https://bugs.launchpad.net/tempest">Bugs</a></li>
+      
+      
+    
+    
+      
+      <li class="specifications"><a
+    href="https://blueprints.launchpad.net/tempest">Blueprints</a></li>
+      
+    
+    
+      
+      <li class="translations"><a
+    href="https://translations.launchpad.net/tempest">Translations</a></li>
+      
+    
+    
+      
+      <li class="answers"><a href="https://answers.launchpad.net/tempest">Answers</a></li>
+      
+    
+  </ul>
+
+      </div>
+
+      <div class="yui-t4">
+        <div id="maincontent" class="yui-main">
+          <div class="yui-b" dir="ltr">
+            <div class="context-publication">
+              
+              
+
+              <div id="registration" class="registering">
+                
+              </div>
+            </div>
+
+            
+            <div id="request-notifications">
+              
+            </div>
+
+            
+              <div>
+    
+    <div class="top-portlet">
+      
+
+      
+        
+          <div>
+            
+<div id="bugs-search-form" class="dynamic_bug_listing"
+     action="">
+  <form method="get" name="search"
+        class="primary search dynamic_bug_listing" action="">
+    <p>
+    <input class="textType" id="field.searchtext" name="field.searchtext" size="20" type="text" value=""  />
+    <input type="submit" name="search" value="Search" />
+    <input class="hiddenType" id="field.status" name="field.status:list" type="hidden" value="NEW"  />
+<input class="hiddenType" id="field.status" name="field.status:list" type="hidden" value="INCOMPLETE_WITH_RESPONSE"  />
+<input class="hiddenType" id="field.status" name="field.status:list" type="hidden" value="INCOMPLETE_WITHOUT_RESPONSE"  />
+<input class="hiddenType" id="field.status" name="field.status:list" type="hidden" value="CONFIRMED"  />
+<input class="hiddenType" id="field.status" name="field.status:list" type="hidden" value="TRIAGED"  />
+<input class="hiddenType" id="field.status" name="field.status:list" type="hidden" value="INPROGRESS"  />
+<input class="hiddenType" id="field.status" name="field.status:list" type="hidden" value="FIXCOMMITTED"  />
+    
+    <input class="hiddenType" id="field.assignee" name="field.assignee" type="hidden" value=""  />
+    <input class="hiddenType" id="field.bug_reporter" name="field.bug_reporter" type="hidden" value=""  />
+    
+    <input class="hiddenType" id="field.omit_dupes" name="field.omit_dupes" type="hidden" value="on"  />
+    <input class="hiddenType" id="field.has_patch" name="field.has_patch" type="hidden" value=""  />
+    
+    <input class="hiddenType" id="field.has_no_package" name="field.has_no_package" type="hidden" value=""  />
+    <a href="?advanced=1">Advanced search</a>
+    </p>
+
+    
+  <p id="also-in-ubuntu">
+    Ubuntu
+    also
+    tracks bugs for packages derived from this project:
+    
+      <span style="white-space: nowrap"><a href="/ubuntu/+source/tempest" class="sprite package-source">tempest in Ubuntu</a></span>.
+  </p>
+
+
+    
+
+    <div>
+    </div>
+  </form>
+</div>
+
+
+            <div id="bugs-table-listing">
+  
+
+  
+    <div class="lesser"><table style="width: 100%;" class="upper-batch-nav">
+  <tbody>
+    <tr>
+      <td style="white-space: nowrap" class="batch-navigation-index">
+        
+            <strong>76</strong>
+            
+              &rarr;
+              <strong>144</strong>
+            
+            of
+            144
+            results
+        
+      </td>
+      <td style="text-align: right; white-space: nowrap" class="batch-navigation-links">
+        <a class="first" rel="first"
+           href="https://bugs.launchpad.net/tempest/+bugs?orderby=-importance"
+           id="upper-batch-nav-batchnav-first">First</a>
+        
+        &bull;
+        <a class="previous" rel="previous"
+           href="https://bugs.launchpad.net/tempest/+bugs?orderby=-importance&amp;direction=backwards&amp;memo=75"
+           id="upper-batch-nav-batchnav-previous">Previous</a>
+        
+        &bull;
+        
+        <span class="next inactive"><strong>Next</strong></span>
+        
+          &bull;
+          
+          <span class="last inactive">Last</span>
+        
+      </td>
+    </tr>
+  </tbody>
+</table>
+</div>
+    
+        <div id="bugs-orderby"></div>
+        <div id="client-listing"><div class="listing">
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1505127</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1505127" class="bugtitle">[cinder] Encrypted volume tests missing from Tempest for Block Storage V2</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusCONFIRMED">
+            Confirmed
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1505363</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1505363" class="bugtitle">Unnecessary testing resources created when listing tests with tenant isolation</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1506394</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1506394" class="bugtitle">Create new tests for incremental backup in cinder</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1506435</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1506435" class="bugtitle">[cinder] Test to enable Backup support for  Encrypted volume   in Tempest API for Block Storage V2 </a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1517310</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1517310" class="bugtitle">directory which generated by tempest-plugin-cookiecutter structure has been changed</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">8</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINCOMPLETE">
+            Incomplete
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1518555</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1518555" class="bugtitle">BaseImageTest(Base test class for Image API tests) Class should add “setup_clients(cls)” function</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINCOMPLETE">
+            Incomplete
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1519198</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1519198" class="bugtitle">Remove aliases for client manager in tempest/test.py</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">12</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusCONFIRMED">
+            Confirmed
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1527227</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1527227" class="bugtitle">tempest.scenario.test_security_groups_basic_ops.TestSecurityGroupsBasicOps.test_in_tenant_traffic returns false positive</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">8</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1530177</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1530177" class="bugtitle"> ssh_shell_prologue causing netcat/nc to fail</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINCOMPLETE">
+            Incomplete
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1530181</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1530181" class="bugtitle">support identity on subpath</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusFIXCOMMITTED">
+            Fix Committed
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1531917</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1531917" class="bugtitle">Strange error when using versionless identity endpoint.</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">10</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1533025</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1533025" class="bugtitle">change add ping6 security-rule,because icmpv6 protocol can add directly</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1539927</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1539927" class="bugtitle">[tempest-lib] REST client can not parse 'list' in json response in any case</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusCONFIRMED">
+            Confirmed
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1542278</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1542278" class="bugtitle">disable_ssl_certificate_validation is broken</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1542425</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1542425" class="bugtitle">test_list_servers_by_admin &amp; test_list_servers_by_admin_with_specified_tenant: mismatch error when admin tenant's VM is already spawned</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusCONFIRMED">
+            Confirmed
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1542527</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1542527" class="bugtitle">TestStampPattern fails to call create_server correctly</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">8</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusCONFIRMED">
+            Confirmed
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1542530</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1542530" class="bugtitle">TestStampPattern doesn't handle v2 of the volume API</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">8</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1546706</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1546706" class="bugtitle">DEFAULT_INSTANCE_TYPE not honored in the new Ironic's devstack plugin</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1555524</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1555524" class="bugtitle">Any tempest plugin import failure leads other plugin tests fails</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">10</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1559078</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1559078" class="bugtitle">Scalar stack_owner_role where heat supports multiple roles</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1560358</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1560358" class="bugtitle">&quot;os-getSerialConsole&quot; missing in servers_client.py</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1561335</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1561335" class="bugtitle">Test internal network connectivity doesn't test connectivity to other VMs in test_network_basic_ops</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1563796</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1563796" class="bugtitle">Tempest alt_client explodes if nova service url does not include {project_id}</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINCOMPLETE">
+            Incomplete
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1564645</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1564645" class="bugtitle">test_lock_unlock_server fails when run with admin role but passes with Member role</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">10</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1565584</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1565584" class="bugtitle">Default tests do not request credentials by role</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">8</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusCONFIRMED">
+            Confirmed
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1577632</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1577632" class="bugtitle">SSH Client hangs on execute command</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">14</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINCOMPLETE">
+            Incomplete
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1582579</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1582579" class="bugtitle">create_test_server should pass config_drive when using personality</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINCOMPLETE">
+            Incomplete
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1588724</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1588724" class="bugtitle">Tempest tests failed for s/liberty</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">12</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusCONFIRMED">
+            Confirmed
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1592345</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1592345" class="bugtitle">Import of tempest.test has side-effect that config is parsed</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">8</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1600349</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1600349" class="bugtitle">PreProvisionedCredentialProvider does not handle os-networks extension not being enabled</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">12</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1600372</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1600372" class="bugtitle">Missing IP validation in the test_rebuild_server test</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1604097</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1604097" class="bugtitle">Cannot disable external plugins</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusFIXCOMMITTED">
+            Fix Committed
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1606096</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1606096" class="bugtitle">test_add_image_member got MismatchError</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1611771</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1611771" class="bugtitle">verify_tempest_config.py: verify_api_versions can't get versions of glance and not check api_v3 for cinder</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1620166</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1620166" class="bugtitle">Use actual attachment number instead of hardcoded 1 in test_list_get_volume_attachments</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusCONFIRMED">
+            Confirmed
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1624066</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1624066" class="bugtitle">tempest account-generator fails to use the '--config-file' option to read from a non-standard tempest.conf location</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">12</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusFIXCOMMITTED">
+            Fix Committed
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1624809</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1624809" class="bugtitle">verify config cmd for glance api versions works incorrectly</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1631872</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1631872" class="bugtitle">Not all neutron ports are ACTIVE after the vm spawns (hyper-v)</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">22</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1634233</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1634233" class="bugtitle">Test attempts to access ResellerAdmin role even if reseller support is disabled</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1635043</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1635043" class="bugtitle">Unexpected failure when accounts.yaml doesn't have user ID</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINCOMPLETE">
+            Incomplete
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1646779</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1646779" class="bugtitle">libvirt killed by kernel on general protection or stack segment traps</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">26</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusNEW">
+            New
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1659065</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1659065" class="bugtitle">cleanup not working when not using Default domain</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusNEW">
+            New
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1659515</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1659515" class="bugtitle">Some tests fail when running keystone v3 with policy.v3cloudsample.json</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINCOMPLETE">
+            Incomplete
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1659797</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1659797" class="bugtitle">concurrency doesn't work for tests which setup resources in resource_setup </a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusCONFIRMED">
+            Confirmed
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1661543</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1661543" class="bugtitle">running stack testcases gets InvalidCredentials</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusNEW">
+            New
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1663529</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1663529" class="bugtitle">test_server_basic_ops: mounting /dev/sr0 on /mnt failed: Device or resource busy </a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1664313</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1664313" class="bugtitle">mke2fs confirmation crashes test_stamp_pattern</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusCONFIRMED">
+            Confirmed
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1664793</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1664793" class="bugtitle">test_stamp_pattern timing out waiting for attached device to show up in guest</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">28</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINCOMPLETE">
+            Incomplete
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1667443</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1667443" class="bugtitle">API endpoints become inaccessible after tempest run</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">8</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1671256</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1671256" class="bugtitle">test_get_volume_absolute_limits fails with no admin credentials</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1671366</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1671366" class="bugtitle">IPv6 Scenario tests should use icmpv6 protocol for Security Group rule</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusNEW">
+            New
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1671933</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1671933" class="bugtitle">test_attach_detach_volume high failure rate</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1672613</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1672613" class="bugtitle">Read or write object with rights tests broken</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1673749</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1673749" class="bugtitle">Keystone v3 extension os-ep-filter api testcases and client</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1673811</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1673811" class="bugtitle">Missing compute server evacuate client method</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINCOMPLETE">
+            Incomplete
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1674596</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1674596" class="bugtitle">tempest orchestration api for neutron resources fails</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">10</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1676731</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1676731" class="bugtitle">os-force_detach test of Cinder does not exist in tempest.</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1677136</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1677136" class="bugtitle">Deleting external network leads a failure to tempest/api/compute/admin/test_auto_allocate_network</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1679223</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1679223" class="bugtitle">tempest.api.compute.servers.test_server_tags.ServerTagsTestJSON fail on centos7 nodes</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1680122</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1680122" class="bugtitle">cinder list returned empty volume_image_metadata</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">10</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1680852</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1680852" class="bugtitle">Improve test_volume_backup_create_get_detailed_list_restore_delete</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusNEW">
+            New
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1681866</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1681866" class="bugtitle">Bad response code while validating token: 502</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1682425</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1682425" class="bugtitle">Indentity v3 extension OS-OAUTH1 token related APIs missing in client</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1682641</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1682641" class="bugtitle">Policy association client is needed for accessing v3/OS-ENDPOINT-POLICY/endpoints/ API</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1682882</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1682882" class="bugtitle">Endpoint client is needed for accessing v3/OS-EP-FILTER/endpoint_groups API</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusINPROGRESS">
+            In Progress
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1682984</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1682984" class="bugtitle">Keystone admin v3 use 'default' domian in test_tokens and test_trusts</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusCONFIRMED">
+            Confirmed
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1683809</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1683809" class="bugtitle">tempest verify config only works with config files in etc/ relative to source tree</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusCONFIRMED">
+            Confirmed
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1683818</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1683818" class="bugtitle">test_boot_with_low_ram emits deprecation warning</a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+  <div class="buglisting-row">
+
+    <div class="buglisting-col1">
+        <div class="importance importanceUNDECIDED">
+            Undecided
+        </div>
+        <div class="status statusNEW">
+            New
+        </div>
+        <div class="buginfo-extra">
+        </div>
+    </div>
+
+    <div class="buglisting-col2">
+        <div class="buginfo">
+                <span class="bugnumber">#1685139</span>
+            <a href="https://bugs.launchpad.net/tempest/+bug/1685139" class="bugtitle">tempest-lib is depricated </a>
+        </div>
+        <div class="buginfo-extra">
+                <span class="sprite product field">
+                    tempest
+                </span>
+                <span class="bug-heat-icons">
+                     <span class="sprite flame">6</span>
+                </span>
+            <span class="bug-related-icons">
+                
+            </span>
+        </div>
+    </div>
+
+  </div>
+</div>
+</div>
+        <script>LP.mustache_listings = "\u003cdiv class=\"listing\"\u003e\n{{#items}}\n  \u003cdiv class=\"buglisting-row\"\u003e\n\n    \u003cdiv class=\"buglisting-col1\"\u003e\n        {{#show_importance}}\n        \u003cdiv class=\"importance {{importance_class}}\"\u003e\n            {{importance}}\n        \u003c/div\u003e\n        {{/show_importance}}\n        {{#show_status}}\n        \u003cdiv class=\"status {{status_class}}\"\u003e\n            {{status}}\n        \u003c/div\u003e\n        {{/show_status}}\n        \u003cdiv class=\"buginfo-extra\"\u003e\n            {{#show_information_type}}\n                \u003cdiv class=\"information_type\"\u003e\n                    {{information_type}}\n                \u003c/div\u003e\n            {{/show_information_type}}\n        \u003c/div\u003e\n    \u003c/div\u003e\n\n    \u003cdiv class=\"buglisting-col2\"\u003e\n        \u003cdiv class=\"buginfo\"\u003e\n            {{#show_id}}\n                \u003cspan class=\"bugnumber\"\u003e#{{id}}\u003c/span\u003e\n            {{/show_id}}\n            \u003ca href=\"{{bug_url}}\" class=\"bugtitle\"\u003e{{title}}\u003c/a\u003e\n        \u003c/div\u003e\n        \u003cdiv class=\"buginfo-extra\"\u003e\n            {{#show_targetname}}\n                \u003cspan class=\"{{bugtarget_css}} field\"\u003e\n                    {{bugtarget}}\n                \u003c/span\u003e\n            {{/show_targetname}}\n            {{#show_milestone_name}}\n                \u003cspan class=\"sprite milestone field\"\u003e\n                    {{#milestone_name}}\n                    {{milestone_name}}\n                    {{/milestone_name}}\n                    {{^milestone_name}}\n                    No milestone set\n                    {{/milestone_name}}\n                \u003c/span\u003e\n            {{/show_milestone_name}}\n            {{#show_date_last_updated}}\n                \u003cspan class=\"sprite milestone field\"\u003e\n                    Last updated {{last_updated}}\n                \u003c/span\u003e\n            {{/show_date_last_updated}}\n            {{#show_assignee}}\n                \u003cspan class=\"sprite person field\"\u003e\n                    {{#assignee}}Assignee: {{assignee}}{{/assignee}}\n                    {{^assignee}}Assignee: None{{/assignee}}\n                \u003c/span\u003e\n            {{/show_assignee}}\n            {{#show_reporter}}\n                \u003cspan class=\"sprite person field\"\u003e\n                    Reporter: {{reporter}}\n                \u003c/span\u003e\n            {{/show_reporter}}\n            {{#show_datecreated}}\n                \u003cspan class=\"sprite aging field\"\u003e\n                    {{age}}\n                \u003c/span\u003e\n            {{/show_datecreated}}\n            {{#show_tag}}\n                \u003cspan class=\"field\"\u003eTags:\n                  {{^has_tags}}None{{/has_tags}}\n                  {{#tags}}\n                     \u003ca href=\"{{url}}\" class=\"tag\"\u003e{{tag}}\u003c/a\u003e\u0026#160;\n                  {{/tags}}\n                \u003c/span\u003e\n            {{/show_tag}}\n            {{#show_heat}}\n                \u003cspan class=\"bug-heat-icons\"\u003e\n                     {{{bug_heat_html}}}\n                \u003c/span\u003e\n            {{/show_heat}}\n            \u003cspan class=\"bug-related-icons\"\u003e\n                {{{badges}}}\n            \u003c/span\u003e\n        \u003c/div\u003e\n    \u003c/div\u003e\n\n  \u003c/div\u003e\n{{/items}}\n\u003c/div\u003e\n";</script>
+    
+    <div class="lesser"><table style="width: 100%;" class="lower-batch-nav">
+  <tbody>
+    <tr>
+      <td style="white-space: nowrap" class="batch-navigation-index">
+        
+            <strong>76</strong>
+            
+              &rarr;
+              <strong>144</strong>
+            
+            of
+            144
+            results
+        
+      </td>
+      <td style="text-align: right; white-space: nowrap" class="batch-navigation-links">
+        <a class="first" rel="first"
+           href="https://bugs.launchpad.net/tempest/+bugs?orderby=-importance"
+           id="lower-batch-nav-batchnav-first">First</a>
+        
+        &bull;
+        <a class="previous" rel="previous"
+           href="https://bugs.launchpad.net/tempest/+bugs?orderby=-importance&amp;direction=backwards&amp;memo=75"
+           id="lower-batch-nav-batchnav-previous">Previous</a>
+        
+        &bull;
+        
+        <span class="next inactive"><strong>Next</strong></span>
+        
+          &bull;
+          
+          <span class="last inactive">Last</span>
+        
+      </td>
+    </tr>
+  </tbody>
+</table>
+</div>
+  
+
+  
+</div>
+
+          </div>
+        
+
+        
+      
+
+      <div class="yui-u">
+        <div id="structural-subscription-content-box"></div>
+      </div>
+    </div>
+  </div>
+            
+            
+          </div><!-- yui-b -->
+        </div><!-- yui-main -->
+
+        
+          <div id="side-portlets" class="yui-b side">
+            
+    <div id="bug-portlets">
+      <div id="involvement" class="portlet">
+        <ul class="involvement">
+          <li class="first">
+            <a href="+filebug" class="menu-link-filebug sprite bugs">
+              Report a bug
+            </a>
+          </li>
+          
+        </ul>
+
+      </div>
+      <div class="portlet">
+        <ul>
+          
+          
+        </ul>
+      </div>
+      <div class="portlet">
+        <ul>
+          
+        </ul>
+        <dl id="bug-supervisor">
+          <dt>Bug supervisor:</dt>
+          <dd>
+            
+            <a href="https://launchpad.net/~tempest-bug-team" class="sprite team">Tempest Bug Team</a>
+            
+              
+            
+          </dd>
+        </dl>
+      </div>
+      
+      
+        <div class="portlet" id="portlet-bugfilters">
+  <a id="bugtarget-bugfilters-link"
+     href="/tempest/+bugtarget-portlet-bugfilters-stats">
+  </a>
+  <div id="bugfilters-portlet-content">
+  
+<ul class="data-list">
+  <li>
+    <span class="count"></span>
+      <a href="+bugs?search=Search&amp;field.status=New">
+      
+  
+   New bugs
+      </a>
+  </li>
+  <li>
+    <span class="count"></span>
+      <a href="https://bugs.launchpad.net/tempest/+bugs">
+      
+  
+   Open bugs
+      </a>
+  </li>
+  <li>
+    <span class="count"></span>
+      <a href="+bugs?search=Search&amp;field.status=In+Progress">
+      
+  
+   In-progress bugs
+      </a>
+  </li>
+  <li>
+    <span class="count"></span>
+      <a href="+bugs?search=Search&amp;field.importance=Critical&amp;field.status=New&amp;field.status=Incomplete&amp;field.status=Confirmed&amp;field.status=Triaged&amp;field.status=In+Progress&amp;field.status=Fix+Committed">
+      
+  
+   Critical bugs
+      </a>
+  </li>
+  <li>
+    <span class="count"></span>
+      <a href="+bugs?search=Search&amp;field.importance=High&amp;field.status=New&amp;field.status=Incomplete&amp;field.status=Confirmed&amp;field.status=Triaged&amp;field.status=In+Progress&amp;field.status=Fix+Committed">
+      
+  
+   High importance bugs
+      </a>
+  </li>
+  <li>
+    <span class="count"></span>
+      <a href="https://bugs.launchpad.net/tempest/+expirable-bugs">
+      
+  
+   Incomplete bugs
+      </a>
+      (can expire)
+  </li>
+  <li class="breaker"></li>
+  
+  
+  
+  <li class="breaker"></li>
+  <li>
+    
+    <span class="count"></span>
+      <a href="https://bugs.launchpad.net/tempest/+bugs?field.status_upstream=resolved_upstream">
+      Bugs fixed elsewhere
+      </a>
+  </li>
+  <li>
+    <span class="count"></span>
+      <a href="/tempest/+patches">
+      
+  
+   Bugs with patches
+      </a>
+  </li>
+  <li>
+    <span class="count"></span>
+      <a href="https://bugs.launchpad.net/tempest/+bugs?field.has_cve=on">
+      
+  
+   Open CVE bugs
+      </a>
+      <span>
+      - <a href="/tempest/+cve">
+      
+  
+   CVE reports
+      </a>
+      </span>
+  </li>
+  
+</ul>
+
+</div>
+  <script type="text/javascript">
+    LPJS.use('io-base', 'node', function(Y) {
+        Y.on('domready', function() {
+            var url = Y.one('#bugtarget-bugfilters-link').getAttribute('href');
+            var handlers = {
+                success: function(transactionid, response, arguments) {
+                    Y.one('#bugfilters-portlet-content').set(
+                        'innerHTML', response.responseText);
+                },
+                failure: function() {
+                    Y.one('#bugfilters-portlet-content').set('innerHTML', '');
+                }
+            };
+            var request = Y.io(url, {on: handlers});
+        });
+    });
+  </script>
+</div>
+
+        
+        <div class="portlet" id="portlet-tags">
+  <div id="tags-portlet-spinner" class="hidden centered">
+    <img src="/@@/spinner" />
+  </div>
+  <a id="tags-content-link"
+     href="/tempest/+bugtarget-portlet-tags-content"></a>
+  <script type="text/javascript">
+    LPJS.use('lp.bugs.bugtask.taglist', function(Y) {
+      Y.on('domready', function() {
+        Y.lp.bugs.bugtask.taglist.setup_taglist();
+      });
+    });
+  </script>
+  <a href="" id="show-more-tags-link" class="js-action hidden">Show more tags&hellip;</a>
+  <a href="" id="show-fewer-tags-link" class="js-action hidden">Show fewer tags&hellip;</a>
+  <div class="breaker"></div>
+  
+</div>
+
+        
+
+        
+
+       
+    </div>
+  
+          </div><!-- yui-b side -->
+        
+      </div><!-- yui-t4 -->
+
+      
+  <div id="footer" class="footer">
+    <div class="lp-arcana">
+        <div class="lp-branding">
+          <a href="https://launchpad.net/"><img src="/@@/launchpad-logo-and-name-hierarchy.png" alt="Launchpad" /></a>
+          &nbsp;&bull;&nbsp;
+          <a href="https://launchpad.net/+tour">Take the tour</a>
+          &nbsp;&bull;&nbsp;
+          <a href="https://help.launchpad.net/">Read the guide</a>
+          &nbsp;
+          <form id="globalsearch" method="get"
+                accept-charset="UTF-8"
+                action="https://launchpad.net/+search">
+            <input type="search" id="search-text" name="field.text" />
+            <input type="image" src="/@@/search" style="vertical-align:5%" alt="Search Launchpad" />
+          </form>
+        </div>
+        
+  
+
+    </div>
+
+    <div class="colophon">
+      &copy; 2004-2017
+      <a href="http://canonical.com/">Canonical&nbsp;Ltd.</a>
+      &nbsp;&bull;&nbsp;
+      <a href="https://launchpad.net/legal">Terms of use</a>
+      &nbsp;&bull;&nbsp;
+      <a href="/feedback">Contact Launchpad Support</a>
+      
+      &nbsp;&bull;&nbsp;
+      <a href="http://blog.launchpad.net/">Blog</a>
+      
+	&nbsp;&bull;&nbsp;
+	<a href="http://www.canonical.com/about-canonical/careers">Careers</a>
+      
+      &nbsp;&bull;&nbsp;
+      <a href="https://twitter.com/launchpadstatus">System status</a>
+      <span id="lp-version">
+      &nbsp;&bull;&nbsp;
+        r18361
+        
+        
+        (<a href="https://dev.launchpad.net/">Get the code!</a>)
+      </span>
+    </div>
+  </div>
+
+    </div><!-- yui-d0-->
+
+    
+  
+  
+  <script id="json-cache-script">LP.cache = {"field_visibility": {"show_id": true, "show_information_type": false, "show_tag": false, "show_reporter": false, "show_importance": true, "show_assignee": false, "show_date_last_updated": false, "show_datecreated": false, "show_targetname": true, "show_heat": true, "show_milestone_name": false, "show_status": true}, "order_by": "-importance", "target_info": {"url": "https://launchpad.net/tempest", "title": "tempest"}, "forwards": true, "start": 75, "related_features": {"bugs.dynamic_bug_listings.pre_fetch": {"url": "https://bugs.launchpad.net/launchpad/+bug/888756", "is_beta": false, "value": null, "title": "Listing pre-fetching"}}, "memo": "75", "last_start": 75, "mustache_model": {"items": [{"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Rishabh Das", "importance": "Undecided", "age": "1 year old", "title": "[cinder] Encrypted volume tests missing from Tempest for Block Storage V2", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Rishabh Das", "has_tags": false, "badges": "", "information_type": "Public", "id": 1505127, "last_updated": "on 2017-04-06", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1505127"}, {"bugtarget": "tempest", "status": "Confirmed", "bugtarget_css": "sprite product", "reporter": "Mike", "importance": "Undecided", "age": "1 year old", "title": "Unnecessary testing resources created when listing tests with tenant isolation", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Shuquan Huang", "has_tags": false, "badges": "", "information_type": "Public", "id": 1505363, "last_updated": "on 2016-06-07", "status_class": "statusCONFIRMED", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1505363"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Oleksiy Butenko", "importance": "Undecided", "age": "1 year old", "title": "Create new tests for incremental backup in cinder", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Oleksiy Butenko", "has_tags": true, "badges": "", "information_type": "Public", "id": 1506394, "last_updated": "on 2016-02-15", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [{"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=test-needed", "tag": "test-needed"}], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1506394"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Poornima Kshirsagar", "importance": "Undecided", "age": "1 year old", "title": "[cinder] Test to enable Backup support for  Encrypted volume   in Tempest API for Block Storage V2 ", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Poornima Kshirsagar", "has_tags": false, "badges": "", "information_type": "Public", "id": 1506435, "last_updated": "on 2016-01-28", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1506435"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Yuiko Takada", "importance": "Undecided", "age": "1 year old", "title": "directory which generated by tempest-plugin-cookiecutter structure has been changed", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e8\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Yuiko Takada", "has_tags": false, "badges": "", "information_type": "Public", "id": 1517310, "last_updated": "on 2015-11-18", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1517310"}, {"bugtarget": "tempest", "status": "Incomplete", "bugtarget_css": "sprite product", "reporter": "Jacky_lei_zhang", "importance": "Undecided", "age": "1 year old", "title": "BaseImageTest(Base test class for Image API tests) Class should add \u201csetup_clients(cls)\u201d function", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Jacky_lei_zhang", "has_tags": false, "badges": "", "information_type": "Public", "id": 1518555, "last_updated": "on 2016-06-07", "status_class": "statusINCOMPLETE", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1518555"}, {"bugtarget": "tempest", "status": "Incomplete", "bugtarget_css": "sprite product", "reporter": "Bo Chi", "importance": "Undecided", "age": "1 year old", "title": "Remove aliases for client manager in tempest/test.py", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e12\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Bo Chi", "has_tags": false, "badges": "", "information_type": "Public", "id": 1519198, "last_updated": "on 2016-06-07", "status_class": "statusINCOMPLETE", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1519198"}, {"bugtarget": "tempest", "status": "Confirmed", "bugtarget_css": "sprite product", "reporter": "Yair Fried", "importance": "Undecided", "age": "1 year old", "title": "tempest.scenario.test_security_groups_basic_ops.TestSecurityGroupsBasicOps.test_in_tenant_traffic returns false positive", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e8\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": false, "badges": "", "information_type": "Public", "id": 1527227, "last_updated": "on 2016-11-14", "status_class": "statusCONFIRMED", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1527227"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "alex kang", "importance": "Undecided", "age": "1 year old", "title": " ssh_shell_prologue causing netcat/nc to fail", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "alex kang", "has_tags": false, "badges": "", "information_type": "Public", "id": 1530177, "last_updated": "on 2016-04-01", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1530177"}, {"bugtarget": "tempest", "status": "Incomplete", "bugtarget_css": "sprite product", "reporter": "Brant Knudson", "importance": "Undecided", "age": "1 year old", "title": "support identity on subpath", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Brant Knudson", "has_tags": false, "badges": "", "information_type": "Public", "id": 1530181, "last_updated": "on 2016-06-07", "status_class": "statusINCOMPLETE", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1530181"}, {"bugtarget": "tempest", "status": "Fix Committed", "bugtarget_css": "sprite product", "reporter": "Sofer Athlan-Guyot", "importance": "Undecided", "age": "1 year old", "title": "Strange error when using versionless identity endpoint.", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e10\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Brant Knudson", "has_tags": false, "badges": "", "information_type": "Public", "id": 1531917, "last_updated": "on 2016-11-22", "status_class": "statusFIXCOMMITTED", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1531917"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Jacky_lei_zhang", "importance": "Undecided", "age": "1 year old", "title": "change add ping6 security-rule,because icmpv6 protocol can add directly", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Jacky_lei_zhang", "has_tags": false, "badges": "", "information_type": "Public", "id": 1533025, "last_updated": "on 2016-01-12", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1533025"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Victor Ryzhenkin", "importance": "Undecided", "age": "1 year old", "title": "[tempest-lib] REST client can not parse 'list' in json response in any case", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Victor Ryzhenkin", "has_tags": false, "badges": "", "information_type": "Public", "id": 1539927, "last_updated": "on 2016-05-27", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1539927"}, {"bugtarget": "tempest", "status": "Confirmed", "bugtarget_css": "sprite product", "reporter": "Joseph Lanoux", "importance": "Undecided", "age": "1 year old", "title": "disable_ssl_certificate_validation is broken", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": false, "badges": "", "information_type": "Public", "id": 1542278, "last_updated": "on 2017-01-23", "status_class": "statusCONFIRMED", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1542278"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Guillaume Chenuet", "importance": "Undecided", "age": "1 year old", "title": "test_list_servers_by_admin \u0026 test_list_servers_by_admin_with_specified_tenant: mismatch error when admin tenant's VM is already spawned", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Guillaume Chenuet", "has_tags": false, "badges": "", "information_type": "Public", "id": 1542425, "last_updated": "on 2016-02-11", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1542425"}, {"bugtarget": "tempest", "status": "Confirmed", "bugtarget_css": "sprite product", "reporter": "Brian Dols", "importance": "Undecided", "age": "1 year old", "title": "TestStampPattern fails to call create_server correctly", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e8\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": false, "badges": "", "information_type": "Public", "id": 1542527, "last_updated": "on 2016-06-09", "status_class": "statusCONFIRMED", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1542527"}, {"bugtarget": "tempest", "status": "Confirmed", "bugtarget_css": "sprite product", "reporter": "Brian Dols", "importance": "Undecided", "age": "1 year old", "title": "TestStampPattern doesn't handle v2 of the volume API", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e8\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": false, "badges": "", "information_type": "Public", "id": 1542530, "last_updated": "on 2016-06-09", "status_class": "statusCONFIRMED", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1542530"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Mauro S M Rodrigues", "importance": "Undecided", "age": "1 year old", "title": "DEFAULT_INSTANCE_TYPE not honored in the new Ironic's devstack plugin", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Mauro S M Rodrigues", "has_tags": false, "badges": "", "information_type": "Public", "id": 1546706, "last_updated": "on 2016-03-23", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1546706"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Ghanshyam Mann", "importance": "Undecided", "age": "1 year old", "title": "Any tempest plugin import failure leads other plugin tests fails", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e10\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Ghanshyam Mann", "has_tags": false, "badges": "", "information_type": "Public", "id": 1555524, "last_updated": "on 2016-06-14", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1555524"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Johannes Grassler", "importance": "Undecided", "age": "1 year old", "title": "Scalar stack_owner_role where heat supports multiple roles", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Thomas Bechtold", "has_tags": false, "badges": "", "information_type": "Public", "id": 1559078, "last_updated": "on 2016-03-31", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1559078"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "xiewj", "importance": "Undecided", "age": "1 year old", "title": "\"os-getSerialConsole\" missing in servers_client.py", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Markus Zoeller (markus_z)", "has_tags": false, "badges": "", "information_type": "Public", "id": 1560358, "last_updated": "on 2017-03-20", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1560358"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Tong Liu", "importance": "Undecided", "age": "1 year old", "title": "Test internal network connectivity doesn't test connectivity to other VMs in test_network_basic_ops", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Tong Liu", "has_tags": false, "badges": "", "information_type": "Public", "id": 1561335, "last_updated": "on 2016-03-24", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1561335"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Sean Dague", "importance": "Undecided", "age": "1 year old", "title": "Tempest alt_client explodes if nova service url does not include {project_id}", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Attila Fazekas", "has_tags": false, "badges": "", "information_type": "Public", "id": 1563796, "last_updated": "on 2016-03-30", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1563796"}, {"bugtarget": "tempest", "status": "Incomplete", "bugtarget_css": "sprite product", "reporter": "Imran Hayder", "importance": "Undecided", "age": "1 year old", "title": "test_lock_unlock_server fails when run with admin role but passes with Member role", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e10\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Imran Hayder", "has_tags": false, "badges": "", "information_type": "Public", "id": 1564645, "last_updated": "on 2017-03-06", "status_class": "statusINCOMPLETE", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1564645"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Michael Richardson", "importance": "Undecided", "age": "1 year old", "title": "Default tests do not request credentials by role", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e8\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Dale Smith", "has_tags": false, "badges": "", "information_type": "Public", "id": 1565584, "last_updated": "on 2016-04-06", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1565584"}, {"bugtarget": "tempest", "status": "Confirmed", "bugtarget_css": "sprite product", "reporter": "Franklin Naval", "importance": "Undecided", "age": "355 days old", "title": "SSH Client hangs on execute command", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e14\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Franklin Naval", "has_tags": false, "badges": "", "information_type": "Public", "id": 1577632, "last_updated": "on 2017-03-07", "status_class": "statusCONFIRMED", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1577632"}, {"bugtarget": "tempest", "status": "Incomplete", "bugtarget_css": "sprite product", "reporter": "zhufl", "importance": "Undecided", "age": "341 days old", "title": "create_test_server should pass config_drive when using personality", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "zhufl", "has_tags": false, "badges": "", "information_type": "Public", "id": 1582579, "last_updated": "on 2016-09-21", "status_class": "statusINCOMPLETE", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1582579"}, {"bugtarget": "tempest", "status": "Incomplete", "bugtarget_css": "sprite product", "reporter": "Nikolay Starodubtsev", "importance": "Undecided", "age": "324 days old", "title": "Tempest tests failed for s/liberty", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e12\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": false, "badges": "", "information_type": "Public", "id": 1588724, "last_updated": "on 2017-03-28", "status_class": "statusINCOMPLETE", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1588724"}, {"bugtarget": "tempest", "status": "Confirmed", "bugtarget_css": "sprite product", "reporter": "Jakub Libosvar", "importance": "Undecided", "age": "313 days old", "title": "Import of tempest.test has side-effect that config is parsed", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e8\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "chandan kumar", "has_tags": false, "badges": "", "information_type": "Public", "id": 1592345, "last_updated": "on 2017-03-21", "status_class": "statusCONFIRMED", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1592345"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Daryl Walleck", "importance": "Undecided", "age": "289 days old", "title": "PreProvisionedCredentialProvider does not handle os-networks extension not being enabled", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e12\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Daryl Walleck", "has_tags": false, "badges": "", "information_type": "Public", "id": 1600349, "last_updated": "on 2016-07-13", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1600349"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Castulo J. Martinez", "importance": "Undecided", "age": "288 days old", "title": "Missing IP validation in the test_rebuild_server test", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Jordan Pittier", "has_tags": false, "badges": "", "information_type": "Public", "id": 1600372, "last_updated": "on 2016-12-30", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1600372"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Valeriy Ponomaryov", "importance": "Undecided", "age": "279 days old", "title": "Cannot disable external plugins", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Valeriy Ponomaryov", "has_tags": false, "badges": "", "information_type": "Public", "id": 1604097, "last_updated": "on 2016-07-18", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1604097"}, {"bugtarget": "tempest", "status": "Fix Committed", "bugtarget_css": "sprite product", "reporter": "zhufl", "importance": "Undecided", "age": "272 days old", "title": "test_add_image_member got MismatchError", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "zhufl", "has_tags": false, "badges": "", "information_type": "Public", "id": 1606096, "last_updated": "on 2016-12-15", "status_class": "statusFIXCOMMITTED", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1606096"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Nikita Gerasimov", "importance": "Undecided", "age": "256 days old", "title": "verify_tempest_config.py: verify_api_versions can't get versions of glance and not check api_v3 for cinder", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Nikita Gerasimov", "has_tags": false, "badges": "", "information_type": "Public", "id": 1611771, "last_updated": "on 2016-09-20", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1611771"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Zhenyu Zheng", "importance": "Undecided", "age": "230 days old", "title": "Use actual attachment number instead of hardcoded 1 in test_list_get_volume_attachments", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Zhenyu Zheng", "has_tags": false, "badges": "", "information_type": "Public", "id": 1620166, "last_updated": "on 2016-09-22", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1620166"}, {"bugtarget": "tempest", "status": "Confirmed", "bugtarget_css": "sprite product", "reporter": "Roxana Gherle", "importance": "Undecided", "age": "220 days old", "title": "tempest account-generator fails to use the '--config-file' option to read from a non-standard tempest.conf location", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e12\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": false, "badges": "", "information_type": "Public", "id": 1624066, "last_updated": "on 2016-10-19", "status_class": "statusCONFIRMED", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1624066"}, {"bugtarget": "tempest", "status": "Fix Committed", "bugtarget_css": "sprite product", "reporter": "trisq", "importance": "Undecided", "age": "217 days old", "title": "verify config cmd for glance api versions works incorrectly", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "trisq", "has_tags": true, "badges": "", "information_type": "Public", "id": 1624809, "last_updated": "on 2016-09-21", "status_class": "statusFIXCOMMITTED", "milestone_name": null, "tags": [{"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=tempest-cmd", "tag": "tempest-cmd"}], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1624809"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Claudiu Belu", "importance": "Undecided", "age": "195 days old", "title": "Not all neutron ports are ACTIVE after the vm spawns (hyper-v)", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e22\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Claudiu Belu", "has_tags": true, "badges": "", "information_type": "Public", "id": 1631872, "last_updated": "on 2016-12-15", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [{"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=hyper-v", "tag": "hyper-v"}, {"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=neutron", "tag": "neutron"}], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1631872"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Nuno Santos", "importance": "Undecided", "age": "188 days old", "title": "Test attempts to access ResellerAdmin role even if reseller support is disabled", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Nuno Santos", "has_tags": false, "badges": "", "information_type": "Public", "id": 1634233, "last_updated": "on 2016-11-23", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1634233"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Brant Knudson", "importance": "Undecided", "age": "185 days old", "title": "Unexpected failure when accounts.yaml doesn't have user ID", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Brant Knudson", "has_tags": false, "badges": "", "information_type": "Public", "id": 1635043, "last_updated": "on 2016-10-19", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1635043"}, {"bugtarget": "tempest", "status": "Incomplete", "bugtarget_css": "sprite product", "reporter": "Andrea Frittoli", "importance": "Undecided", "age": "142 days old", "title": "libvirt killed by kernel on general protection or stack segment traps", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e26\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": false, "badges": "", "information_type": "Public", "id": 1646779, "last_updated": "on 2017-04-05", "status_class": "statusINCOMPLETE", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1646779"}, {"bugtarget": "tempest", "status": "New", "bugtarget_css": "sprite product", "reporter": "Alejandro Comisario", "importance": "Undecided", "age": "89 days old", "title": "cleanup not working when not using Default domain", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": false, "badges": "", "information_type": "Public", "id": 1659065, "last_updated": "on 2017-01-26", "status_class": "statusNEW", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1659065"}, {"bugtarget": "tempest", "status": "New", "bugtarget_css": "sprite product", "reporter": "Liam Young", "importance": "Undecided", "age": "87 days old", "title": "Some tests fail when running keystone v3 with policy.v3cloudsample.json", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": false, "badges": "", "information_type": "Public", "id": 1659515, "last_updated": "on 2017-01-26", "status_class": "statusNEW", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1659515"}, {"bugtarget": "tempest", "status": "Incomplete", "bugtarget_css": "sprite product", "reporter": "Vasyl Saienko", "importance": "Undecided", "age": "86 days old", "title": "concurrency doesn't work for tests which setup resources in resource_setup ", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": false, "badges": "", "information_type": "Public", "id": 1659797, "last_updated": "on 2017-03-23", "status_class": "statusINCOMPLETE", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1659797"}, {"bugtarget": "tempest", "status": "Confirmed", "bugtarget_css": "sprite product", "reporter": "zhufl", "importance": "Undecided", "age": "79 days old", "title": "running stack testcases gets InvalidCredentials", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": false, "badges": "", "information_type": "Public", "id": 1661543, "last_updated": "on 2017-03-23", "status_class": "statusCONFIRMED", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1661543"}, {"bugtarget": "tempest", "status": "New", "bugtarget_css": "sprite product", "reporter": "YAMAMOTO Takashi", "importance": "Undecided", "age": "72 days old", "title": "test_server_basic_ops: mounting /dev/sr0 on /mnt failed: Device or resource busy ", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": true, "badges": "", "information_type": "Public", "id": 1663529, "last_updated": "on 2017-03-23", "status_class": "statusNEW", "milestone_name": null, "tags": [{"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=upstream-gate", "tag": "upstream-gate"}], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1663529"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Remus Buzatu", "importance": "Undecided", "age": "69 days old", "title": "mke2fs confirmation crashes test_stamp_pattern", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Remus Buzatu", "has_tags": false, "badges": "", "information_type": "Public", "id": 1664313, "last_updated": "on 2017-02-14", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1664313"}, {"bugtarget": "tempest", "status": "Confirmed", "bugtarget_css": "sprite product", "reporter": "Matt Riedemann", "importance": "Undecided", "age": "67 days old", "title": "test_stamp_pattern timing out waiting for attached device to show up in guest", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e28\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": true, "badges": "", "information_type": "Public", "id": 1664793, "last_updated": "on 2017-04-11", "status_class": "statusCONFIRMED", "milestone_name": null, "tags": [{"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=ceph", "tag": "ceph"}, {"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=quobyte", "tag": "quobyte"}, {"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=upstream-gate", "tag": "upstream-gate"}], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1664793"}, {"bugtarget": "tempest", "status": "Incomplete", "bugtarget_css": "sprite product", "reporter": "Nuno Santos", "importance": "Undecided", "age": "59 days old", "title": "API endpoints become inaccessible after tempest run", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e8\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": true, "badges": "", "information_type": "Public", "id": 1667443, "last_updated": "on 2017-02-28", "status_class": "statusINCOMPLETE", "milestone_name": null, "tags": [{"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=tuning", "tag": "tuning"}, {"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=uosci", "tag": "uosci"}], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1667443"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "J\u00e9r\u00f4me Villeneuve-Larouche", "importance": "Undecided", "age": "45 days old", "title": "test_get_volume_absolute_limits fails with no admin credentials", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "zhufl", "has_tags": false, "badges": "", "information_type": "Public", "id": 1671256, "last_updated": "on 2017-03-13", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1671256"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Sridhar Gaddam", "importance": "Undecided", "age": "45 days old", "title": "IPv6 Scenario tests should use icmpv6 protocol for Security Group rule", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Sridhar Gaddam", "has_tags": false, "badges": "", "information_type": "Public", "id": 1671366, "last_updated": "on 2017-04-06", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1671366"}, {"bugtarget": "tempest", "status": "New", "bugtarget_css": "sprite product", "reporter": "Andrea Frittoli", "importance": "Undecided", "age": "43 days old", "title": "test_attach_detach_volume high failure rate", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": true, "badges": "", "information_type": "Public", "id": 1671933, "last_updated": "on 2017-03-23", "status_class": "statusNEW", "milestone_name": null, "tags": [{"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=upstream-gate", "tag": "upstream-gate"}], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1671933"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Eric Xie", "importance": "Undecided", "age": "40 days old", "title": "Read or write object with rights tests broken", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Eric Xie", "has_tags": false, "badges": "", "information_type": "Public", "id": 1672613, "last_updated": "on 2017-03-14", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1672613"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Pradeep Kumar", "importance": "Undecided", "age": "37 days old", "title": "Keystone v3 extension os-ep-filter api testcases and client", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Pradeep Kumar", "has_tags": false, "badges": "", "information_type": "Public", "id": 1673749, "last_updated": "on 2017-04-18", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1673749"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Mh Raies", "importance": "Undecided", "age": "37 days old", "title": "Missing compute server evacuate client method", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Ghanshyam Mann", "has_tags": false, "badges": "", "information_type": "Public", "id": 1673811, "last_updated": "on 2017-04-19", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1673811"}, {"bugtarget": "tempest", "status": "Incomplete", "bugtarget_css": "sprite product", "reporter": "Hemanth Nakkina", "importance": "Undecided", "age": "33 days old", "title": "tempest orchestration api for neutron resources fails", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e10\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Hemanth Nakkina", "has_tags": true, "badges": "", "information_type": "Public", "id": 1674596, "last_updated": "on 2017-03-29", "status_class": "statusINCOMPLETE", "milestone_name": null, "tags": [{"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=ocata-backport-potential", "tag": "ocata-backport-potential"}], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1674596"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Maho Koshiya", "importance": "Undecided", "age": "26 days old", "title": "os-force_detach test of Cinder does not exist in tempest.", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Maho Koshiya", "has_tags": false, "badges": "", "information_type": "Public", "id": 1676731, "last_updated": "on 2017-04-12", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1676731"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "HengHa", "importance": "Undecided", "age": "25 days old", "title": "Deleting external network leads a failure to tempest/api/compute/admin/test_auto_allocate_network", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "HengHa", "has_tags": false, "badges": "", "information_type": "Public", "id": 1677136, "last_updated": "on 2017-04-10", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1677136"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Markus Zoeller (markus_z)", "importance": "Undecided", "age": "20 days old", "title": "tempest.api.compute.servers.test_server_tags.ServerTagsTestJSON fail on centos7 nodes", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Markus Zoeller (markus_z)", "has_tags": false, "badges": "", "information_type": "Public", "id": 1679223, "last_updated": "on 2017-04-14", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1679223"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "wangxiyuan", "importance": "Undecided", "age": "18 days old", "title": "cinder list returned empty volume_image_metadata", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e10\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "wangxiyuan", "has_tags": false, "badges": "", "information_type": "Public", "id": 1680122, "last_updated": "on 2017-04-19", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1680122"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Jon Bernard", "importance": "Undecided", "age": "16 days old", "title": "Improve test_volume_backup_create_get_detailed_list_restore_delete", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": false, "badges": "", "information_type": "Public", "id": 1680852, "last_updated": "on 2017-04-13", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1680852"}, {"bugtarget": "tempest", "status": "New", "bugtarget_css": "sprite product", "reporter": "Jordan Pittier", "importance": "Undecided", "age": "12 days old", "title": "Bad response code while validating token: 502", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": false, "badges": "", "information_type": "Public", "id": 1681866, "last_updated": "on 2017-04-11", "status_class": "statusNEW", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1681866"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Hemanth Nakkina", "importance": "Undecided", "age": "10 days old", "title": "Indentity v3 extension OS-OAUTH1 token related APIs missing in client", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Hemanth Nakkina", "has_tags": false, "badges": "", "information_type": "Public", "id": 1682425, "last_updated": "on 2017-04-19", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1682425"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Adnan Khan", "importance": "Undecided", "age": "9 days old", "title": "Policy association client is needed for accessing v3/OS-ENDPOINT-POLICY/endpoints/ API", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Adnan Khan", "has_tags": true, "badges": "", "information_type": "Public", "id": 1682641, "last_updated": "on 2017-04-18", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [{"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=identity", "tag": "identity"}, {"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=os-endpoint-policy", "tag": "os-endpoint-policy"}], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1682641"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Adnan Khan", "importance": "Undecided", "age": "9 days old", "title": "Endpoint client is needed for accessing v3/OS-EP-FILTER/endpoint_groups API", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Adnan Khan", "has_tags": true, "badges": "", "information_type": "Public", "id": 1682882, "last_updated": "on 2017-04-14", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [{"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=identity", "tag": "identity"}, {"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=os-ep-filter", "tag": "os-ep-filter"}], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1682882"}, {"bugtarget": "tempest", "status": "In Progress", "bugtarget_css": "sprite product", "reporter": "Xiao Gong", "importance": "Undecided", "age": "8 days old", "title": "Keystone admin v3 use 'default' domian in test_tokens and test_trusts", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Xiao Gong", "has_tags": false, "badges": "", "information_type": "Public", "id": 1682984, "last_updated": "on 2017-04-15", "status_class": "statusINPROGRESS", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1682984"}, {"bugtarget": "tempest", "status": "Confirmed", "bugtarget_css": "sprite product", "reporter": "Matthew Treinish", "importance": "Undecided", "age": "5 days old", "title": "tempest verify config only works with config files in etc/ relative to source tree", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": true, "badges": "", "information_type": "Public", "id": 1683809, "last_updated": "on 2017-04-19", "status_class": "statusCONFIRMED", "milestone_name": null, "tags": [{"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=api", "tag": "api"}], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1683809"}, {"bugtarget": "tempest", "status": "Confirmed", "bugtarget_css": "sprite product", "reporter": "Matthew Treinish", "importance": "Undecided", "age": "5 days old", "title": "test_boot_with_low_ram emits deprecation warning", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": null, "has_tags": true, "badges": "", "information_type": "Public", "id": 1683818, "last_updated": "on 2017-04-19", "status_class": "statusCONFIRMED", "milestone_name": null, "tags": [{"url": "https://bugs.launchpad.net/tempest/+bugs/?field.tag=low-hanging-fruit", "tag": "low-hanging-fruit"}], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1683818"}, {"bugtarget": "tempest", "status": "New", "bugtarget_css": "sprite product", "reporter": "Anandprakash", "importance": "Undecided", "age": "2 days old", "title": "tempest-lib is depricated ", "bug_heat_html": "\u003cspan class=\"sprite flame\"\u003e6\u003c/span\u003e", "importance_class": "importanceUNDECIDED", "assignee": "Anandprakash", "has_tags": false, "badges": "", "information_type": "Public", "id": 1685139, "last_updated": "on 2017-04-21", "status_class": "statusNEW", "milestone_name": null, "tags": [], "bug_url": "https://bugs.launchpad.net/tempest/+bug/1685139"}]}, "next": null, "administratedTeams": [], "view_name": "+bugs", "importances": ["Unknown", "Undecided", "Critical", "High", "Medium", "Low", "Wishlist"], "context": {"license_info": null, "remote_product": null, "recipes_collection_link": "https://bugs.launchpad.net/api/devel/tempest/recipes", "development_focus_link": "https://bugs.launchpad.net/api/devel/tempest/liberty", "bug_supervisor_link": "https://bugs.launchpad.net/api/devel/~tempest-bug-team", "private": false, "registrant_link": "https://bugs.launchpad.net/api/devel/~soren", "official_bug_tags": ["low-hanging-fruit", "test-needed"], "active_milestones_collection_link": "https://bugs.launchpad.net/api/devel/tempest/active_milestones", "commercial_subscription_is_due": false, "all_specifications_collection_link": "https://bugs.launchpad.net/api/devel/tempest/all_specifications", "translation_focus_link": null, "licenses": ["Apache Licence"], "all_milestones_collection_link": "https://bugs.launchpad.net/api/devel/tempest/all_milestones", "bug_reported_acknowledgement": null, "display_name": "tempest", "wiki_url": null, "title": "tempest", "homepage_url": "https://github.com/openstack/tempest", "download_url": null, "is_permitted": "tag:launchpad.net:2008:redacted", "vcs": "Bazaar", "reviewer_whiteboard": "tag:launchpad.net:2008:redacted", "branch_sharing_policy": "Public", "self_link": "https://bugs.launchpad.net/api/devel/tempest", "information_type": "Public", "specification_sharing_policy": "Public", "resource_type_link": "https://bugs.launchpad.net/api/devel/#project", "programming_language": "python", "translations_usage": "Not Applicable", "description": null, "translationpermission": "Closed", "project_reviewed": "tag:launchpad.net:2008:redacted", "valid_specifications_collection_link": "https://bugs.launchpad.net/api/devel/tempest/valid_specifications", "brand_link": "https://bugs.launchpad.net/api/devel/tempest/brand", "sourceforge_project": null, "http_etag": "\"ee3b59437f2a866c976af1ce6a0eac64c1138868-c2d8bd967aba1598c2f518729bdc27902ae089bd\"", "project_group_link": "https://bugs.launchpad.net/api/devel/openstack", "bug_reporting_guidelines": null, "active": true, "bug_tracker_link": null, "name": "tempest", "license_approved": "tag:launchpad.net:2008:redacted", "driver_link": "https://bugs.launchpad.net/api/devel/~tempest-drivers", "freshmeat_project": null, "screenshots_url": null, "web_link": "https://launchpad.net/tempest", "summary": "A set of tests that are run against OpenStack on commits to trunk", "logo_link": "https://bugs.launchpad.net/api/devel/tempest/logo", "owner_link": "https://bugs.launchpad.net/api/devel/~tempest-drivers", "qualifies_for_free_hosting": true, "translationgroup_link": null, "bug_sharing_policy": "Public", "releases_collection_link": "https://bugs.launchpad.net/api/devel/tempest/releases", "date_created": "2011-09-09T20:25:05.941023+00:00", "series_collection_link": "https://bugs.launchpad.net/api/devel/tempest/series", "commercial_subscription_link": null, "icon_link": "https://bugs.launchpad.net/api/devel/tempest/icon"}, "cbl_cookie_name": "anon-buglist-fields", "prev": {"start": 0, "memo": "75"}, "information_types": ["Public", "Public Security", "Private Security", "Private", "Proprietary", "Embargoed"], "sort_keys": [["importance", "Importance", "desc"], ["status", "Status", "asc"], ["information_type", "Information Type", "asc"], ["id", "Number", "desc"], ["title", "Title", "asc"], ["targetname", "Package/Project/Series name", "asc"], ["milestone_name", "Milestone", "asc"], ["date_last_updated", "Date last updated", "desc"], ["assignee", "Assignee", "asc"], ["reporter", "Reporter", "asc"], ["datecreated", "Age", "desc"], ["tag", "Tags", "asc"], ["heat", "Heat", "desc"], ["date_closed", "Date closed", "desc"], ["dateassigned", "Date when the bug task was assigned", "desc"], ["number_of_duplicates", "Number of duplicates", "desc"], ["latest_patch_uploaded", "Date latest patch uploaded", "desc"], ["message_count", "Number of comments", "desc"], ["milestone", "Milestone ID", "desc"], ["task", "Bug task ID", "desc"], ["users_affected_count", "Number of affected users", "desc"]], "total": 144, "field_visibility_defaults": {"show_id": true, "show_information_type": false, "show_tag": false, "show_reporter": false, "show_targetname": true, "show_assignee": false, "show_date_last_updated": false, "show_datecreated": false, "show_importance": true, "show_heat": true, "show_milestone_name": false, "show_status": true}, "statuses": ["New", "Incomplete", "Opinion", "Invalid", "Won't Fix", "Expired", "Confirmed", "Triaged", "In Progress", "Fix Committed", "Fix Released", "Unknown"]};</script>
+
+    
+  
+
+    
+  </body>
+
+
+  <!--
+    Facet name: bugs
+    Page type: main_side
+    Has global search: True
+    Has application tabs: True
+    Has side portlets: True
+
+    At least 32 queries/external actions issued in 0.80 seconds
+
+    Features: {'app.mainsite_only.canonical_url': None, 'js.yui_version': None, 'hard_timeout': u'5000', 'profiling.enabled': None, 'visible_render_time': None, 'baselayout.careers_link.disabled': None, 'ajax.batch_navigator.enabled': None, 'bugs.dynamic_bug_listings.pre_fetch': None}
+
+    r18361
+
+    -->
+
+</html>
+
