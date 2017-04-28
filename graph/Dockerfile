@@ -9,4 +9,4 @@ RUN apt-get update && apt-get install -y \
     python-matplotlib \
     python-pandas
 
-ENTRYPOINT [/make_graph.py]
+ENTRYPOINT ["python", "/make_graph.py"]
