@@ -22,3 +22,8 @@ do
     COUNT=`grep "status status$STATUS" log.* | wc -l`
     echo "$STATUS, $COUNT" >> result.csv
 done
+
+cd ../../
+
+./commit_new_data.sh
+
