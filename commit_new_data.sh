@@ -21,7 +21,7 @@ if -z ${FLAG} ; then
     docker run --name ${DOCKER_WORKER} ${DOCKER_IMAGE}
 fi
 
-docker cp result.csv ${DOCKER_WORKER}:result.csv
+docker cp graph/result.csv ${DOCKER_WORKER}:result.csv
 docker restart make_graph
 rm tempest_bug_count.png
 docker cp make_graph:tempest_bug_count.png tempest_bug_count.png
