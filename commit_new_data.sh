@@ -11,9 +11,9 @@ git push origin master
 
 # Create a new graph
 FLAG=`docker ps -a | grep ${DOCKER_WORKER}`
-if -z "${FLAG}" ; then
+if [ -z "${FLAG}" ]; then
     FLAG=`docker images | grep ${DOCKER_IMAGE}`
-    if -z "${FLAG}" ; then
+    if [ -z "${FLAG}" ]; then
         cd graph
         docker build -t ${DOCKER_IMAGE} .
         cd ..
